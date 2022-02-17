@@ -10,10 +10,15 @@ provider "google" {
 // To set up this resource with Terraform, the service account key used 
 // must have the appropriate permissions.
 resource "google_cloud_run_service" "a" {
-  name     = "service-1"
-  location = "us-central1"
 
-  template {
+  // for_each = toset(local.locations)
+  // name     = "service-${each.key}"
+
+  count = length(var.names)
+  name  = var.names[count.index]
+  location = "asia-south1"
+
+   template {
     spec {
       containers {
         image = "us-docker.pkg.dev/cloudrun/container/hello"
@@ -28,6 +33,7 @@ resource "google_cloud_run_service" "a" {
 }
 
 
+
 // Ressource 2: gives to non authenticated users access to the web page
 // To set up this resource with Terraform, the service account key used 
 // must have the appropriate permissions.
@@ -35,19 +41,17 @@ resource "google_cloud_run_service" "a" {
 data "google_iam_policy" "noauth" {
   binding {
     role = "roles/run.invoker"
-    members = [
-      "allUsers",
-    ]
+    members = ["allUsers"]
   }
 }
 
 resource "google_cloud_run_service_iam_policy" "noauth" {
-  location    = google_cloud_run_service.a.location
-  project     = google_cloud_run_service.a.project
-  service     = google_cloud_run_service.a.name
-
+  count       = length(var.names)
+  service     = google_cloud_run_service.a[count.index].name
+  location    = google_cloud_run_service.a[count.index].location
   policy_data = data.google_iam_policy.noauth.policy_data
 }
+
 
 
 ################################
