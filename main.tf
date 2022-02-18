@@ -9,19 +9,23 @@ provider "google" {
 // Write the path to the docker image hosted in the google container registry
 // To set up this resource with Terraform, the service account key used 
 // must have the appropriate permissions.
-resource "google_cloud_run_service" "a" {
+  
 
-  // for_each = toset(local.locations)
-  // name     = "service-${each.key}"
-
-  count = length(var.names)
-  name  = var.names[count.index]
+resource "google_cloud_run_service" "dev" {
+  
+  for_each = var.service-image
+  name  = each.key
   location = "asia-south1"
 
    template {
     spec {
+       service_account_name = "cloud-run-az@searce-msp-gcp.iam.gserviceaccount.com" 
+            
+    
       containers {
-        image = "us-docker.pkg.dev/cloudrun/container/hello"
+    
+        image = each.value
+        
       }
     }
   }
@@ -31,6 +35,7 @@ resource "google_cloud_run_service" "a" {
     latest_revision = true
   }
 }
+
 
 
 
@@ -46,12 +51,9 @@ data "google_iam_policy" "noauth" {
 }
 
 resource "google_cloud_run_service_iam_policy" "noauth" {
-  count       = length(var.names)
-  service     = google_cloud_run_service.a[count.index].name
-  location    = google_cloud_run_service.a[count.index].location
+  for_each = var.service-image
+  service     = google_cloud_run_service.dev[each.key].name
+  location    = google_cloud_run_service.dev[each.key].location
   policy_data = data.google_iam_policy.noauth.policy_data
-}
-
-
 
 ################################
